@@ -1,0 +1,232 @@
+#include "cache.h"
+
+int globalDepth;
+int leafCounter;
+int testLine;
+
+struct bNode
+{
+    int value;
+    int leafFlag;
+    int way;		// Way of associativity
+    int side; 		// Indicates whether is left or right leaf of up node
+    bNode *up;      // Shows the previous node to reverse back
+    bNode *left;	// left block is more recent (even way number)
+    bNode *right;	// right block is more recent (odd way number)		
+};
+
+struct leaf
+{
+    bNode *up;		// Shows the previous node to reverse back
+};
+	
+bNode *line_order_bTree; // Create a tree for each cache line
+leaf *reverse_bTree; // Keep a reverse array to tree leaf for each way
+
+void printTree (bNode *root, int depth)
+{
+    depth = depth >> 1;
+    fprintf(stderr, "Depth: %d\n", depth);        
+    fprintf(stderr, "Node side: %d\n", root->side);
+    fprintf(stderr, "Node value: %d\n", root->value);
+    if (root->leafFlag)
+    {
+        fprintf(stderr, "Way: %d\n", root->way);
+    }
+    else
+    {	
+        fprintf(stderr, "Going left\n");
+        printTree (root->left, depth);
+
+        fprintf(stderr, "Going right\n");
+        printTree (root->right, depth);
+    }
+}
+
+void createTree (bNode *root, int depth, long line, int side, int n_ways)
+{
+    globalDepth++;
+    depth = depth >> 1;
+    root->value = 0;
+    root->side = side;
+    if ((testLine >= 0) && (line == testLine))
+    {
+        fprintf(stderr, "Creating nodes for depth: %d\n", depth);
+    }
+    if (depth == 0)
+    {
+        root->leafFlag = 1;
+        root->way = leafCounter;
+        reverse_bTree[leafCounter+(line*n_ways)].up = root;
+        if ((testLine >= 0) && (line == testLine))
+        {
+            fprintf(stderr, "Node side: %d, and way: %d, by pointer: %d\n", root->side, root->way,reverse_bTree[leafCounter+(line*n_ways)].up->way);
+            fprintf(stderr, "Creating leaf for way: %d, location: %ld\n", leafCounter, leafCounter+(line*n_ways));
+        }
+        leafCounter++;
+    }
+    else
+    {	
+        root->leafFlag = 0;
+        root->way = 0;
+        root->left = new bNode;
+        if ((testLine >= 0) && (line == testLine))
+        {
+            fprintf(stderr, "Node side: %d\n", root->side);
+            fprintf(stderr, "Creating left for depth: %d\n", depth);
+        }
+        createTree (root->left, depth, line, 0, n_ways);
+        root->left->up = root;
+
+        root->right = new bNode;
+        if ((testLine >= 0) && (line == testLine))
+        {
+            fprintf(stderr, "Node side: %d\n", root->side);
+            fprintf(stderr, "Creating right for depth: %d\n", depth);
+        }
+        createTree(root->right, depth, line, 1, n_ways);			
+        root->right->up = root;
+    }
+}
+
+void reset(int n_sets, int n_ways) 
+{
+    for (long line = 0; line < n_sets; line++) 
+    {
+        bNode *bRoot = line_order_bTree + line;
+        int depth = n_ways;
+        bRoot->up = NULL;
+        globalDepth = 0;
+        leafCounter = 0;
+        createTree (bRoot, depth, line, 0, n_ways);
+    }
+}
+
+int evict_select(long line)
+{
+    int lru_way = 0;
+    
+    bNode *bRoot = line_order_bTree + line;
+    
+    while (!bRoot->leafFlag)
+    {
+        // If 1 then most recent was the right so take the left to evict and vice versa
+        if (bRoot->value)
+        {
+            bRoot = bRoot->left;
+        }
+        else
+        {
+            bRoot = bRoot->right;				
+        }
+    }
+    
+    lru_way = bRoot->way;
+
+    if ((testLine >= 0) && (line == testLine))
+    {
+        fprintf(stderr, "Evicting way: %d\n", lru_way);
+    }
+
+    return lru_way;
+}
+
+uint32_t CACHE::find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
+{
+    // baseline LRU replacement policy for other caches 
+    //return lru_victim(cpu, instr_id, set, current_set, ip, full_addr, type); 
+    return evict_select(set); 
+}
+
+void CACHE::update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit)
+{
+    if (type == WRITEBACK) {
+        if (hit) // wrietback hit does not update LRU state
+            return;
+    }
+
+    return lru_update(set, way);
+}
+
+uint32_t CACHE::lru_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
+{
+    uint32_t way = 0;
+
+    // fill invalid line first
+    for (way=0; way<NUM_WAY; way++) {
+        if (block[set][way].valid == false) {
+
+            DP ( if (warmup_complete[cpu]) {
+            cout << "[" << NAME << "] " << __func__ << " instr_id: " << instr_id << " invalid set: " << set << " way: " << way;
+            cout << hex << " address: " << (full_addr>>LOG2_BLOCK_SIZE) << " victim address: " << block[set][way].address << " data: " << block[set][way].data;
+            cout << dec << " lru: " << block[set][way].lru << endl; });
+
+            break;
+        }
+    }
+
+    // LRU victim
+    if (way == NUM_WAY) {
+        for (way=0; way<NUM_WAY; way++) {
+            if (block[set][way].lru == NUM_WAY-1) {
+
+                DP ( if (warmup_complete[cpu]) {
+                cout << "[" << NAME << "] " << __func__ << " instr_id: " << instr_id << " replace set: " << set << " way: " << way;
+                cout << hex << " address: " << (full_addr>>LOG2_BLOCK_SIZE) << " victim address: " << block[set][way].address << " data: " << block[set][way].data;
+                cout << dec << " lru: " << block[set][way].lru << endl; });
+
+                break;
+            }
+        }
+    }
+
+    if (way == NUM_WAY) {
+        cerr << "[" << NAME << "] " << __func__ << " no victim! set: " << set << endl;
+        assert(0);
+    }
+
+    return way;
+}
+
+void CACHE::lru_update(uint32_t set, uint32_t way)
+{
+    // update lru replacement state
+    for (uint32_t i=0; i<NUM_WAY; i++) {
+        if (block[set][i].lru < block[set][way].lru) {
+            block[set][i].lru++;
+        }
+    }
+    block[set][way].lru = 0; // promote to the MRU position
+}
+
+void CACHE::replacement_final_stats()
+{
+
+}
+
+#ifdef NO_CRC2_COMPILE
+void InitReplacementState()
+{
+    
+}
+
+uint32_t GetVictimInSet (uint32_t cpu, uint32_t set, const BLOCK *current_set, uint64_t PC, uint64_t paddr, uint32_t type)
+{
+    return 0;
+}
+
+void UpdateReplacementState (uint32_t cpu, uint32_t set, uint32_t way, uint64_t paddr, uint64_t PC, uint64_t victim_addr, uint32_t type, uint8_t hit)
+{
+    
+}
+
+void PrintStats_Heartbeat()
+{
+    
+}
+
+void PrintStats()
+{
+
+}
+#endif

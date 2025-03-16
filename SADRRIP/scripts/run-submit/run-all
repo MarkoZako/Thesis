@@ -1,0 +1,16 @@
+#!/usr/bin/tcsh
+
+# $1 sim
+# $2 replacement policy
+
+set blist = `ls /home/students/cs/benchmarks/champsim/ | grep gz | sed "s/.trace.gz//g"`
+
+mkdir results-$1-$2
+
+foreach bench ($blist)
+
+
+echo run_champsim $1 100 500 $bench $2
+run_champsim.sh $1 100 500 $bench $2
+
+end

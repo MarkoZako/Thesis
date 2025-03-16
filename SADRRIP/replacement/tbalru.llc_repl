@@ -1,0 +1,237 @@
+#include <unordered_map>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <sstream>
+#include <iterator>
+#include "cache.h"
+
+std::unordered_map<unsigned int, unsigned int> discharged;
+
+uint32_t testLine;
+
+// cyclesZero = Maximum cycles to retain charge > 0
+
+int cyclesZero;
+
+// cyclesStep = Minimum cycles (charge) to identify voltage differences
+
+// cyclesStep > cyclesZero = perfect resolution
+
+int cyclesStep;
+
+void reset(int n_sets, int n_ways) 
+{
+}
+
+// initialize replacement state
+void CACHE::llc_initialize_replacement()
+{
+    testLine = 0;
+
+    cyclesZero = 4000 * 100; // 1, 10, 100 microseconds (translated to cycles: 1 microsecond = 4000 cycles)
+
+    
+    cyclesStep = 1; // cyclesStep = 1 = perfect resolution
+
+}
+
+// find replacement victim
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type, uint64_t current_core_cycle)
+{
+    // baseline LRU
+    uint32_t way = 0;
+    int maxCycles = -1;
+
+    int maxWay = -1;
+
+    
+    // fill invalid line first
+    for (way=0; way<NUM_WAY; way++) {
+        if (block[set][way].valid == false) {
+
+            DP ( if (warmup_complete[cpu]) {
+            cout << "[" << NAME << "] " << __func__ << " instr_id: " << instr_id << " invalid set: " << set << " way: " << way;
+            cout << hex << " address: " << (full_addr>>LOG2_BLOCK_SIZE) << " victim address: " << block[set][way].address << " data: " << block[set][way].data;
+            cout << dec << " lru: " << block[set][way].lru << endl; });
+
+            break;
+        }
+    }
+        
+    maxCycles = -1;
+
+    maxWay = -1;
+
+    
+    // LRU victim
+    if (way == NUM_WAY) 
+    {
+        int currentCyclesCharge[NUM_WAY] = {};            
+        if ((testLine >= 0) && (set == testLine))
+        {
+            cout << endl << "************************************" << endl << "Current cycle is " << current_core_cycle << endl;
+        }
+        
+        int countDischarged = 0;
+        for (way=0; way<NUM_WAY; way++)
+        {
+            currentCyclesCharge[way] = (current_core_cycle - block[set][way].lru);
+            if (currentCyclesCharge[way] >= cyclesZero) 
+            {
+                currentCyclesCharge[way] = -1;
+                countDischarged++;
+            }
+
+
+            if ((testLine >= 0) && (set == testLine))
+            {
+                cout << "Cycle charge for way " << way << " is " << currentCyclesCharge[way] << " (" << block[set][way].lru << ")" << endl;
+            }
+        }
+
+        auto search = discharged.find(countDischarged);
+        if (search != discharged.end()) {
+            discharged[countDischarged]++;
+        } 
+        else 
+        {
+            //discharged.insert( { countDischarged, 1 });
+        }
+
+        for (way=0; way<NUM_WAY; way++) 
+        {
+            if (maxWay == -1) 
+            {
+                maxWay = way; maxCycles = currentCyclesCharge[way];
+            }
+
+            
+            // currentCyclesCharge == -1 then break and return currentWay as it has 0 charge
+
+            if (currentCyclesCharge[way] == -1)
+            {
+                maxWay = way; 
+                maxCycles = currentCyclesCharge[way];
+                
+                if ((testLine >= 0) && (set == testLine))
+                {
+                    cout << "Replaced discharged way: " << maxWay << " with charge " << maxCycles << " and cycles " << block[set][maxWay].lru << endl;
+                }
+                
+                return maxWay;
+            }
+
+            else if (maxWay != way)
+            {
+                int cyclesResolution = abs(currentCyclesCharge[way] - maxCycles);
+                if (cyclesResolution > cyclesStep) 
+                {
+
+                    if (currentCyclesCharge[way] > maxCycles)
+                    {
+
+                        if ((testLine >= 0) && (set == testLine))
+                        {
+                            cout << "Previous old: " << maxWay << " with charge " << maxCycles << " and cycles " << block[set][maxWay].lru << endl;
+                        }
+                       
+                        maxWay = way; 
+                        maxCycles = currentCyclesCharge[way];
+                        
+                        if ((testLine >= 0) && (set == testLine))
+                        {
+                            cout << "New old: " << maxWay << " with charge " << maxCycles << " and cycles " << block[set][maxWay].lru << endl;
+                        }
+                    }
+                }
+
+                else
+                {
+                    if ((testLine >= 0) && (set == testLine))
+                    {
+                        cout << "Not enough resolution beetween way " << maxWay << " and " << way << endl;
+                    }
+                }
+            }
+        }
+
+        if ((testLine >= 0) && (set == testLine))
+        {
+            cout << "Replaced way: " << maxWay << " with charge " << maxCycles << " and cycles " << block[set][maxWay].lru << endl;
+        }
+
+        return maxWay;
+    }
+    else
+    {
+        if ((testLine >= 0) && (set == testLine))
+        {
+            cout << "Replacing invalid way: " << way << " with tag " << block[set][way].tag << endl;
+        }
+
+        return way;
+    }
+}
+
+// called on every cache hit and cache fill
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit, uint64_t current_core_cycle, int fill_level, uint8_t valid)
+{
+    string TYPE_NAME;
+    int hitToMeasure = 0;
+    if (type == LOAD)
+        TYPE_NAME = "LOAD";
+    else if (type == RFO)
+        TYPE_NAME = "RFO";
+    else if (type == PREFETCH)
+        TYPE_NAME = "PF";
+    else if (type == WRITEBACK)
+        TYPE_NAME = "WB";
+    else
+        assert(0);
+
+    if (hit)
+    {
+        TYPE_NAME += "_HIT";
+        hitToMeasure = 1;
+    }
+    else
+    {
+        TYPE_NAME += "_MISS";
+    }
+    
+    if ((type == WRITEBACK) && ip)
+        assert(0);
+
+    // uncomment this line to see the LLC accesses
+    // cout << "CPU: " << cpu << "  LLC " << setw(9) << TYPE_NAME << " set: " << setw(5) << set << " way: " << setw(2) << way;
+    // cout << hex << " paddr: " << setw(12) << paddr << " ip: " << setw(8) << ip << " victim_addr: " << victim_addr << dec << endl;
+
+    // baseline LRU
+    if (hit && (type == WRITEBACK)) // writeback hit does not update LRU state
+        return;
+
+    uint64_t timeDiff = current_core_cycle - block[set][way].lru;
+
+    if ((testLine >= 0) && (set == testLine))
+    {
+        cout << "Hit: " << hitToMeasure << "Old Cycle: " << block[set][way].lru << " Hit on way: " << way << " with tag " << block[set][way].tag << endl;
+    }
+
+    block[set][way].lru = current_core_cycle;
+
+    if ((testLine >= 0) && (set == testLine))
+    {
+        cout << "Hit: " << hitToMeasure << "New Cycle: " << block[set][way].lru << " with difference: " << timeDiff << endl;
+    }
+    
+    return;
+}
+
+void CACHE::llc_replacement_final_stats()
+{
+    for (std::pair<unsigned int, unsigned int> element : discharged)
+    {
+		std::cout << "Discharged: "<< element.first << " :: " << element.second << std::endl;
+    }
+}

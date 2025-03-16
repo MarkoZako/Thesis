@@ -1,0 +1,581 @@
+#include "ooo_cpu.h"
+#include "cache.h"
+
+// policy defined in terms of policy1/2 x types x  what to do in case of hit/miss
+//
+// miss 0, hit 1 x LOAD, RFO, PREFETCH, WRITEBACK
+#define CASES 2 // miss 0 , hit 1
+#define PNUM 2  // number of competing policies
+#define SRR    0 // srrip
+#define BRR    1 // brrip
+
+#define MOD_TYPES 2
+#define MOD_CLEAN 0
+#define MOD_DIRTY 1
+
+uint32_t drrip_policy[PNUM][NUM_TYPES][CASES][MOD_TYPES];
+//
+// options: 0,1,2,3 RRIP states for where to insert, 4 means do nothing and 5,6,7 means 1,2,3 but 1/32 0,1,2
+
+// slope parameters
+#define WINDOW (window)
+//#define SR_THR	(int(WINDOW*0.25))
+//#define BR_THR   (-(int(WINDOW*0.50)))
+#define SR_THR	(sr_thr)
+#define BR_THR   (-br_thr)
+#define PSEL_SRR_BOOST ((PSEL_MAX)-(boost))
+#define PSEL_BRR_BOOST (boost)
+int *phist;
+int pcount=0;
+int point=0;
+int pstate = SRR;
+uint64_t switches = 0;	// stat how many switches between policies
+uint64_t replSRR = 0;		// stat how many replacements using SRR
+uint64_t replBRR = 0;		// stat how many replacements using BRR
+
+
+#define USED_TYPES 2
+#define USED_USE   0
+#define USED_REUSE 1
+
+
+
+uint32_t dem_policy[PNUM][NUM_TYPES][MOD_TYPES];//structure to save the demote mask for each policy and each type of access and cleanliness
+
+#define DEM_FULL 0 //Full demotion
+#define DEM_P1 1 // demote policy 1 (minimal)
+#define DEM_P2 2 // demote policy 2 (almost maximal - except all 0)
+#define DEM_P3 3 // demote policy 3 (maximal)
+#define DEM_P4 4 // 1.5
+
+
+
+
+#define maxRRPV 3
+#define NUM_POLICY 2
+#define SDM_SIZE 32
+#define TOTAL_SDM_SETS NUM_CPUS*NUM_POLICY*SDM_SIZE
+#define BIP_MAX 32
+#define PSEL_WIDTH (psel_width)
+#define PSEL_MAX ((1<<PSEL_WIDTH)-1)
+#define PSEL_THRS PSEL_MAX/2
+
+uint32_t rrpv[LLC_SET][LLC_WAY],
+bip_counter = 0,
+PSEL[NUM_CPUS];
+unsigned rand_sets[TOTAL_SDM_SETS];
+
+#define VECTOR_NUM 16 // 0,01,02,03,012,013,023,0123,1,12,13,123,2,23,3 - summary of states of blocks in a set
+uint32_t stan_hits[PNUM][NUM_TYPES][MOD_TYPES][USED_TYPES][maxRRPV+1][VECTOR_NUM];
+uint32_t stan_misses[PNUM][NUM_TYPES][MOD_TYPES][USED_TYPES][maxRRPV+1][VECTOR_NUM];
+
+uint32_t icount = 0;// interval count
+
+
+
+// SA definitions
+#define INTERVAL (window)			// reuse this SD param for SA how often to consider policy
+#define INTERVAL_MASK (psel_mask)	// reuse this SD param for SA which misses to update interval counter
+#define HIT_MASK (hit_mask)			// which hits to update the stat analytic counters
+uint32_t rrpvcounters[maxRRPV+1];	// track hits with each state durin gan interval
+//uint32_t insRRPV; - may be define this to be pstate 
+uint32_t replaceCount;				// number of misses in current interval
+
+
+uint64_t allhits = 0;
+uint64_t allmisses = 0;
+
+void update_state(uint32_t &s, uint32_t pol, uint32_t type, uint8_t hit, uint8_t dirty){
+
+	switch(drrip_policy[pol][type][hit][dirty]){
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		s = drrip_policy[pol][type][hit][dirty];
+		break;
+		case 4:
+		// do nothing
+		break;
+		case 5:
+		case 6:
+		case 7:
+		bip_counter++;
+		if (bip_counter == BIP_MAX){
+			s = drrip_policy[pol][type][hit][dirty] - 5;
+			bip_counter = 0;
+        }
+		else
+		s = drrip_policy[pol][type][hit][dirty] - 4;
+		break;
+		default:
+		abort();
+    }
+}
+
+
+
+void CACHE::llc_initialize_replacement()
+{
+    cout << "Initialize DRRIP state" << endl;
+	
+    for(int i=0; i<LLC_SET; i++) {
+        for(int j=0; j<LLC_WAY; j++)
+		rrpv[i][j] = maxRRPV;
+    }
+	
+    // randomly selected sampler sets
+    srand(time(NULL));
+    unsigned long rand_seed = 1;
+    unsigned long max_rand = 1048576;
+    uint32_t my_set = LLC_SET;
+    int do_again = 0;
+    for (int i=0; i<TOTAL_SDM_SETS; i++) {
+        do {
+            do_again = 0;
+            rand_seed = rand_seed * 1103515245 + 12345;
+            rand_sets[i] = ((unsigned) ((rand_seed/65536) % max_rand)) % my_set;
+            printf("Assign rand_sets[%d]: %u  LLC: %u\n", i, rand_sets[i], my_set);
+            for (int j=0; j<i; j++) {
+                if (rand_sets[i] == rand_sets[j]) {
+                    do_again = 1;
+                    break;
+                }
+            }
+        } while (do_again);
+        printf("rand_sets[%d]: %d\n", i, rand_sets[i]);
+    }
+	
+    for (int i=0; i<NUM_CPUS; i++)
+	PSEL[i] = 0;
+	
+    uint64_t t = rrip_policies;
+    uint64_t t2 = dirty_rrip_policies; 
+    for(int k=0;k<PNUM;++k){
+		for(int i=0;i<NUM_TYPES;++i)
+		for(int j=0;j<CASES;++j){
+			drrip_policy[k][i][j][MOD_CLEAN] = t%10;
+			drrip_policy[k][i][j][MOD_DIRTY] = t2%10;
+			t = t/10;
+			t2 = t2/10;
+        }
+    }
+
+
+    //NEW DEMOTION FEATURE
+    uint64_t dem = demote_mask;
+    for(int i=0;i<PNUM;i++){
+      for(int k=0;k<MOD_TYPES;k++){
+    	for(int j=0;j<NUM_TYPES;j++){
+    		dem_policy[i][j][k] = dem%10;
+    		dem = dem/10;
+    	}
+      }
+    }
+  for(int k=0;k < MOD_TYPES;k++){
+   if(k==0)
+	cout<< " CLEAN-RRIP-POLICY-1: ";
+   else
+	cout<< " DIRTY-RRIP-POLICY-1: ";
+    for(int i=NUM_TYPES-1;i>=0;--i)
+	for(int j=CASES-1;j>=0;--j)
+	cout <<drrip_policy[SRR][i][j][k] << "-";
+   if(k==0)
+	cout<< " CLEAN-RRIP-POLICY-2: ";
+   else
+	cout<< " DIRTY-RRIP-POLICY-2: ";
+    for(int i=NUM_TYPES-1;i>=0;--i)
+	for(int j=CASES-1;j>=0;--j)
+	cout <<drrip_policy[BRR][i][j][k] << "-";
+	cout << "\n";
+  }
+    cout << " PSEL width: " << psel_width;
+    cout<<      endl;
+	
+    phist = new int[WINDOW];
+    for(int i=0;i<WINDOW;++i)
+      phist[i]=0;
+
+    if (dsalgo == 1){
+      cout << "DS Algo Params- Window: " << window << " BRR Threshold: " << BR_THR << " SRR Threshold: " << SR_THR << " Boost:" << boost << endl;
+    }
+    if (dsalgo == 2){
+      replaceCount = 0;
+      for(int i=0;i<maxRRPV+1;++i) rrpvcounters[i]=0;
+      cout << "SA Algo Params - Interval: " << INTERVAL << " Interval Mask: " << INTERVAL_MASK << " Hit Mask: " << HIT_MASK << endl;
+    }
+
+    for(int a=0;a<PNUM;++a)
+      for(int b=0;b<NUM_TYPES;++b)
+	for(int c=0;c<MOD_TYPES;++c)
+	  for(int d=0;d<USED_TYPES;++d)
+	    for(int e=0;e<maxRRPV+1;++e)
+	      for(int f=0;f<VECTOR_NUM;++f){
+		stan_hits[a][b][c][d][e][f]=0;
+		stan_misses[a][b][c][d][e][f]=0;
+	      }
+
+}
+
+int is_it_leader(uint32_t cpu, uint32_t set)
+{
+    uint32_t start = cpu * NUM_POLICY * SDM_SIZE,
+	end = start + NUM_POLICY * SDM_SIZE;
+	
+    for (uint32_t i=start; i<end; i++)
+	if (rand_sets[i] == set)
+	return ((i - start) / SDM_SIZE);
+	
+    return -1;
+}
+
+// called on every cache hit and cache fill
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit, uint64_t current_core_cycle, int fill_level, uint8_t valid)
+{
+    int leader = is_it_leader(cpu, set);
+    uint64_t blockAddress = (full_addr >> LOG2_BLOCK_SIZE);
+    int normalHit = 0;
+    uint32_t pol;
+    
+    if (hit)
+    {
+        normalHit = 1;
+        allhits++;
+    }
+    else
+    {
+        allmisses++;
+    }
+	
+    if ((track_set == LLC_SET || track_set == set)){
+		// uncomment this line to see the LLC accesses
+		cout << "CPU: " << cpu << "  LLC " << setw(9) << type << " "  << ((int) hit) << " set: " << setw(5) << set << " way: " << setw(2) << way;
+		cout << hex << " paddr: " << setw(12) << (full_addr >> LOG2_BLOCK_SIZE) << " ip: " << setw(8) << ip << " victim_addr: " << (victim_addr >> LOG2_BLOCK_SIZE)<< dec << " cycle: " << current_core_cycle;
+		cout << " icount: " << ooo_cpu[cpu].num_retired << " Leader: " << leader << " PSEL: " << PSEL[cpu] << endl;
+    }
+    else{
+      if (track_set == -2){
+	if (dsalgo ==0){
+	  if (leader!=-1&& !hit && (psel_mask & (1<<type))){
+	    cout << "PSEL: " << PSEL[cpu] << endl;
+	  }
+	} else if (dsalgo == 1){
+	  if (leader!=-1 && (psel_mask & (1<<type)))
+	    cout << "DSA: " << leader << " " << pstate << " " << pcount << " " << type << " " << ((int) hit) << " " << switches << " PSEL: " << PSEL[cpu] << endl;
+	}
+      }
+    }
+    
+    //    cout << "BA: " << blockAddress << " HIT: " << normalHit << " WB: " << (type == WRITEBACK) << " BT: " << leader << " PSEL: " << PSEL[cpu] << endl;
+	
+    if (dsalgo==0){
+      // need to figure out policy
+      if (leader == -1) { // follower sets
+	if (PSEL[cpu] > PSEL_THRS)
+	  pol = BRR;
+	else
+	  pol = SRR;
+	if (!hit && (psel_mask & (1<<type))){
+	  if (pol==SRR)
+	    ++replSRR;
+	  else
+	    ++replBRR;
+	}
+      }
+      else{
+	if (leader ==0){
+	  // if (!hit && type!=3 && PSEL[cpu] > 0) PSEL[cpu]--;
+	  if (!hit && (psel_mask & (1<<type)) && PSEL[cpu] > 0){ PSEL[cpu]--;if (PSEL[cpu]==PSEL_THRS)++switches;}
+	  pol = BRR;
+	}
+	else{
+	  //	if (!hit && type!=3 && PSEL[cpu] < PSEL_MAX) PSEL[cpu]++;
+	  if (!hit && (psel_mask & (1<<type)) && PSEL[cpu] < PSEL_MAX){ PSEL[cpu]++;if (PSEL[cpu]==PSEL_THRS+1)++switches;}
+	  pol = SRR;
+	}
+      }
+      //      update_state(rrpv[set][way], pol, type, hit);
+    }
+    else if (dsalgo==1){
+      if (leader == -1) { // follower sets
+	  pol = pstate;
+      }
+      else{
+	if (leader ==0){
+	  if (!hit && (psel_mask & (1<<type))){
+	    if (PSEL[cpu] > 0) PSEL[cpu]--;
+	    pcount = pcount + 1 - phist[point];
+	    phist[point]=1;
+	    ++point;
+	    if (point == WINDOW) point =0;
+	  }
+	  pol = BRR;
+	}
+	else{
+	  if (!hit && (psel_mask & (1<<type))){
+	    if (PSEL[cpu] < PSEL_MAX) PSEL[cpu]++;
+	    pcount= pcount - 1 - phist[point];
+	    phist[point]=-1;
+	    ++point;
+	    if (point == WINDOW) point =0;
+	  }
+	  pol = SRR;
+	}
+
+	if (pstate == BRR){
+	  if (PSEL[cpu]<=PSEL_THRS){
+	    pstate = SRR;
+	  }
+	  else if (pcount > SR_THR && phist[point]!=0){
+	    if (PSEL[cpu] > PSEL_SRR_BOOST){
+	      PSEL[cpu] = PSEL_SRR_BOOST;
+	    }
+	    else{
+	      PSEL[cpu] = PSEL_THRS;
+	      pstate = SRR;
+	    }
+	    pcount = 0; for(int i=0;i<WINDOW;++i)phist[i]=0;
+	  }
+	  if (pstate == SRR) ++switches;
+	}
+	else{
+	  if  (PSEL[cpu]>PSEL_THRS){
+	    pstate = BRR;
+	  }
+	  else if (pcount < BR_THR && phist[point]!=0){
+	    if (PSEL[cpu] < PSEL_BRR_BOOST){
+	      PSEL[cpu] = PSEL_BRR_BOOST;
+	    }
+	    else{
+	      PSEL[cpu] = PSEL_THRS+1;
+	      pstate = BRR;
+	    }
+	    pcount = 0; for(int i=0;i<WINDOW;++i)phist[i]=0;
+	  }
+	  if (pstate == BRR) ++switches;
+	}
+      }
+      // update_state(rrpv[set][way], pol, type, hit);
+    } else if (dsalgo == 2){
+      if (hit && (HIT_MASK & (1<< type)) )
+	rrpvcounters[rrpv[set][way]]++;
+      pol = pstate;
+      //      update_state(rrpv[set][way], pstate, type, hit);
+    }
+
+    if (track_set == -3 && hit){                                                                                                                                                                                      
+      int a,b,c,d,e,f;                                                                                                                                                                                         
+      //      a = (PSEL[cpu] > PSEL_THRS);                                                                                                                                                                           
+      a = pol;
+      b = type;                                                                                                                                                                                                
+      c = block[set][way].dirty;                                                                                                                                                                                 
+      d = block[set][way].used;                                                                                                                                                                                  
+      e = rrpv[set][way];                                                                                                                                                                                       
+      f = 0;                                                                                                                                                                                                   
+      for(int i=0;i<LLC_WAY; i++) f = f | (1<<rrpv[set][i]);                                                                                                                                                   
+      stan_hits[a][b][c][d][e][f]++;                                                                                                                                                                         
+    }                                                                                                                                                                                                          
+    update_state(rrpv[set][way], pol, type, hit, block[set][way].dirty);
+
+}
+
+// find replacement victim
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type, uint64_t current_core_cycle, uint64_t instr_unique_id)
+{
+  int iflag = 0;
+  uint32_t pol;
+    // SA algo selects policy for next interval
+    if (dsalgo==2 && (INTERVAL_MASK & (1<< type)) ){
+      ++replaceCount;
+      if (replaceCount == INTERVAL){
+	iflag = 1;
+	replaceCount = 0;
+	unsigned int hitSum = 0;
+	for (int i=0; i<(maxRRPV+1); i++) hitSum += rrpvcounters[i];
+	uint32_t insRRPV;
+	insRRPV = (pstate == SRR) ? 2 : 3;
+	int switchInsRRPV3 = (rrpvcounters[insRRPV] < (INTERVAL >> 1)) && ((rrpvcounters[0]+rrpvcounters[insRRPV]) <= (hitSum >> 1));
+	int switchInsRRPV2 = (rrpvcounters[insRRPV] >= (INTERVAL >> 1)) || (rrpvcounters[0] > (hitSum >> 1));
+	if (insRRPV == maxRRPV){
+	  replBRR+=INTERVAL;
+	  if (switchInsRRPV2){
+	    pstate = SRR;
+	    ++switches;
+	  }
+	}
+	else{
+	  replSRR+=INTERVAL;
+	  if (switchInsRRPV3){
+	    pstate = BRR;
+	    ++switches;
+	  }
+	}
+	for (int i=0; i<(maxRRPV+1); i++) rrpvcounters[i] = 0;	
+      }
+    }
+    pol = pstate; // this covers dsalgo == 2
+
+    int dem_mask = demote_mask;
+    if (dsalgo==0){
+	int leader = is_it_leader(cpu, set);
+	if (leader == -1){
+	  if (PSEL[cpu] > PSEL_THRS){
+		pol = BRR;
+	  }
+	  else{
+		pol = SRR;
+	  }
+	}
+	else{
+	  if (leader == 0){
+		pol = BRR;
+	  }
+	  else{
+		pol = SRR;
+	  }
+	}
+    }
+    else if (dsalgo==2){
+	if (pstate == SRR)
+	    dem_mask = demote_mask;
+	else
+	    dem_mask = 15;
+    }
+
+    uint32_t trrpv[LLC_WAY];
+
+    unsigned int max = rrpv[set][0];
+    for (int i=0; i<LLC_WAY; i++) {trrpv[i]=rrpv[set][i]; if (max<rrpv[set][i]) max=rrpv[set][i];}
+    // look for the maxRRPV line
+    while (1)
+      {
+        for (int i=0; i<LLC_WAY; i++){
+          if (rrpv[set][i] == maxRRPV){
+	        for (int j=0; j<LLC_WAY; j++){
+		int dirty = block[set][j].dirty;
+	        int option = dem_policy[pol][type][dirty];//option for demote policy
+		//cout << "option: " << option << " dirty: " << dirty << " pol: " << pol << " type: " << type << endl;
+          	switch(option){
+          		case DEM_FULL:
+				if(dem_policy[pol][type][MOD_CLEAN] == dem_policy[pol][type][MOD_DIRTY])
+				j=LLC_WAY;
+          			break;
+          		case DEM_P1:
+				   rrpv[set][j] = trrpv[j];
+				    if (max == 1){ 
+					++rrpv[set][j];
+				}
+          			break;
+          		case DEM_P2:
+				rrpv[set][j] = trrpv[j];
+				if (max<=2){
+					 if (rrpv[set][j]<2){ 
+						++rrpv[set][j];
+					}
+			  	}
+          			break;
+          		case DEM_P3:
+				rrpv[set][j] = trrpv[j];
+          			if (max==0) {
+		  			rrpv[set][j]=2;
+				}
+				else if (max<=2){
+				 if (rrpv[set][j]<2){
+					 ++rrpv[set][j];
+				  }
+				}
+				break;
+			case DEM_P4:
+				rrpv[set][j] = trrpv[j];
+				if (max==0){
+					rrpv[set][j]=2;
+				}else if (max == 1){ 
+					++rrpv[set][j];
+				}
+				break;
+			case 5:
+			case 6:
+			case 7:
+			case 8:
+			case 9:
+			default:
+				abort();
+          	}
+	}
+	    if (track_set == -3){
+	      int a,b,c,d,e,f;	      
+	      a = pol;
+	      b = type;
+	      c = block[set][i].dirty;
+	      d = block[set][i].used;
+	      e = trrpv[i];
+	      f = 0;
+	      for(int i=0;i<LLC_WAY; i++) f = f | (1<<trrpv[i]);
+	      stan_misses[a][b][c][d][e][f]++;
+	    
+	      if (dsalgo==0 && (INTERVAL_MASK & (1<< type))){
+		++replaceCount;
+		if (replaceCount == INTERVAL){
+		  replaceCount = 0;
+		  iflag = 1;
+		}  		
+	      }
+	      
+	      if (iflag){
+		for(int a=0;a<PNUM;++a)                                                                                                                                                                                          
+		  for(int b=0;b<NUM_TYPES;++b)                                                                                                                                                                                   
+		    for(int c=0;c<MOD_TYPES;++c)                                                                                                                                                                                 
+		      for(int d=0;d<USED_TYPES;++d)                                                                                                                                                                              
+			for(int e=0;e<maxRRPV+1;++e)                                                                                                                                                                             
+			  for(int f=0;f<VECTOR_NUM;++f){                                                                                                                                                                         
+			    if (stan_hits[a][b][c][d][e][f]!=0) cout << "STAN-HITS " << icount << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << stan_hits[a][b][c][d][e][f] << endl;
+			    if (stan_misses[a][b][c][d][e][f]!=0) cout << "STAN-MISSES " << icount << " " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << stan_misses[a][b][c][d][e][f] << endl;
+			    stan_hits[a][b][c][d][e][f]=0;
+			    stan_misses[a][b][c][d][e][f]=0;
+			  }
+		++icount;             
+	      }
+	    }
+            return i;
+          }
+	}
+        for (int i=0; i<LLC_WAY; i++)
+	  rrpv[set][i]++;
+      }
+	
+    // WE SHOULD NOT REACH HERE
+    assert(0);
+    return 0;
+}
+
+// use this function to print out your own stats at the end of simulation
+void CACHE::llc_replacement_final_stats()
+{
+    cout << "All Misses: " << allmisses << endl;
+    cout << "All Hits: " << allhits << endl;
+    if (dsalgo == 0){                                                                                                                                                                                             
+      cout << "SD Algo Stats - Switches: " << switches << " SRR-Repls: " << replSRR << " BRR-Repls: " << replBRR  << endl;                                                                                        
+
+      if (track_set == -3 && 0){
+      for(int a=0;a<PNUM;++a)
+	for(int b=0;b<NUM_TYPES;++b)
+	  for(int c=0;c<MOD_TYPES;++c)
+	    for(int d=0;d<USED_TYPES;++d)
+	      for(int e=0;e<maxRRPV+1;++e)
+		for(int f=0;f<VECTOR_NUM;++f){
+		  if (stan_hits[a][b][c][d][e][f]!=0) cout << "STAN-HITS " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << stan_hits[a][b][c][d][e][f];
+		  if (stan_misses[a][b][c][d][e][f]!=0) cout << "STAN-MISSES " << a << " " << b << " " << c << " " << d << " " << e << " " << f << " " << stan_misses[a][b][c][d][e][f];
+		}
+      }
+
+
+
+    }                                                                                                                                                                                                             
+    if (dsalgo == 1){
+      cout << "DS Algo Stats - Switches: " << switches << endl;
+    }
+    if (dsalgo == 2){
+      cout << "SA Algo Stats - Switches: " << switches << " SRR-Repls: " << replSRR << " BRR-Repls: " << replBRR  << endl;
+    }
+}
+

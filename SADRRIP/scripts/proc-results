@@ -1,0 +1,52 @@
+#!/usr/bin/tcsh
+
+# $1 bench start-id
+# $2 bench num
+# $3 name ext
+
+# this is script that defines where SCRIPTS and RESULTS dirs are
+#
+
+set v1 = `SAcommon | gawk '{if (NR==1) print $0}'`
+set v2 = `SAcommon | gawk '{if (NR==2) print $0}'`
+
+setenv RESULTS $v1
+setenv SCRIPTS $v2
+#echo $RESULTS
+#set RESULTS = /home/faculty/yanos/RES/REPL-new/RESULTS
+#set RESULTS = /home/faculty/yanos/RES/REPL-new/SADRRIP/results
+
+
+set blist = `ls /home/students/cs/benchmarks/champsim/ | grep gz | sed "s/.trace.gz//g" |gawk -vb=$1 -vn=$2 '{if (NR>=b && NR<b+n) printf "%s ",$i}'`
+
+#set plist = 'noprefetch-02020202 noprefetch-02420202 noprefetch-22020202 noprefetch-22420202 noprefetch-23020202 noprefetch-23420202 noprefetch-42020202 noprefetch-42420202 noprefetch-43020202 noprefetch-43420202 prefetch-02020202 prefetch-02420202 prefetch-22020202 prefetch-22420202 prefetch-23020202 prefetch-23420202 prefetch-42020202 prefetch-42420202 prefetch-43020202 prefetch-43420202'
+@ m = 0
+
+foreach bench ($blist)
+
+echo -n $bench" "
+foreach  pol ($RESULTS/results*-$3*)
+
+#echo $pol
+
+if (-e $pol/$bench.out) then
+
+#echo 1
+
+grep Finished $pol/$bench.out | gawk '{printf("%s ",$10)}END{if (NR<1)printf("0.0 ")}'
+
+else
+
+#echo 2
+
+@ m = $m + 1
+
+echo -n "0.00 "
+
+endif
+
+end
+echo ""
+end
+
+echo Missing $m

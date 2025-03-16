@@ -17,7 +17,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 <!--General GA inputs-->
     
 <loopSize value="50"/> <!--The size in instructions of the generated code sequences-->
-<population_size value="50"/> <!-- The size of each population - generation-->
+<population_size value="5"/> <!-- The size of each population - generation-->
 <mutation_rate value="0.02"/> <!-- each instruction will have this probability to be mutated (changed to something else)-->
 <crossover_type value="1"/>
 <!--0 for uniform crossover, 1 for one point crossover. This is a good article that explains the crossover types http://en.wikipedia.org/wiki/Crossover_(genetic_algorithm). I have implemented 

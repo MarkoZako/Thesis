@@ -17,7 +17,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 <!--General GA inputs-->
     
 <loopSize value="20"/> <!--The size in instructions of the generated code sequences-->
-<population_size value="50"/> <!-- The size of each population - generation-->
+<population_size value="5"/> <!-- The size of each population - generation MARKO CHANGED FOR SMALLER NUM-->
 <mutation_rate value="0.02"/> <!-- each instruction will have this probability to be mutated (changed to something else)-->
 <crossover_type value="1"/>
 <!--0 for uniform crossover, 1 for one point crossover. This is a good article that explains the crossover types http://en.wikipedia.org/wiki/Crossover_(genetic_algorithm). I have implemented 
@@ -27,7 +27,7 @@ only two crossover types the uniform and the 1 point. For generating stress test
 <uniform_rate value="0.5"/>
 <!--Only used when uniform crossover is set... The chance for each instruction to be crossovered-->
 
-<populations_to_run value="2"/>  <!-- Number of generations to create -->
+<populations_to_run value="2"/>  <!-- Number of generations to create MARKO THINKS THIS IS GENERATIONS NUMS-->
 <ellitism value="true"/>
  <!--
  true or false. If true the best individual is promoted to the next generation. I think keeping this to "true" is good choice
@@ -73,7 +73,7 @@ Enter the name of the class located in the src\Fitness folder that will be used 
 
     <!--Input/output dir-->
     <dirToSaveResults
-        value="/home/npapak01/Thesis/Results/"
+        value="/home/mzako001/Thesis/Results/"
     /> 
     <!-- The code sequeneces will be save in ascii format in .txt files in the specified dir. The name format of each file goes like this populationNumber_individualsIdNumber_fitnessValue_measurement1_.... Also a dir which is named
     after the date/time of the start of the run is created. This dir will contain each population saved in .pkl file and the rand state (also in .pkl format) at each population. This dir can be used as seed dir in case you want to continue an unfinished run. 
@@ -87,7 +87,7 @@ Enter the name of the class located in the src\Fitness folder that will be used 
     
   
     <compilationDir 
-      value="/home/npapak01/Thesis/GeST/assembly_compilation_x86_gcc"
+      value="/home/mzako001/Thesis/GeST/assembly_compilation_x86_gcc"
       />
      <!-- Dir where the compilation code is located .. IMPORTANT the main_original.s must always contain a line #loop_code. At that line
       the framework will bring in the generated code sequence.. In main_original.s and startup_original.s you can place all the code that you want to be common between each individual e.g. memory and register initialization... 

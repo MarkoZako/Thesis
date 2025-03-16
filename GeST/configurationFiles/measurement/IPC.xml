@@ -14,7 +14,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
 <inputs>
 
     <targetRunDir 
-        value="/home/npapak01/Thesis/SADRRIP/Individuals"
+        value="/home/mzako001/Thesis/SADRRIP/Individuals"
     /> <!-- Dir which holds temporary files on the target device -->
     
      <targetHostname 
@@ -22,7 +22,7 @@ TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR TH
     /> <!-- hostname for ssh purposes -->
     
     <targetSSHusername 
-        value="npapak01"
+        value="mzako001"
     /> <!-- ssh username-->
     
       <targetSSHpassword

@@ -1,0 +1,11 @@
+executable = /home/faculty/yanos/RES/REPL-new/SADRRIP/run_1champ.sh
+universe = vanilla
+getenv = True
+notification = error
+requirements = ( ((Arch == "INTEL") || (Arch == "X86_64" )) )
+Initialdir = /home/faculty/yanos/RES/REPL-new/SADRRIP/
+arguments =srrip-flex-prefetch-1core 1 1 Roms \"22020202 22420202 23020202 23420202\"
+output =/home/faculty/yanos/RES/REPL-new/SADDRIP/condor-out-err/Roms.srrip-flex-prefetch-1core.out
+error =/home/faculty/yanos/RES/REPL-new/SADDRIP/condor-out-err/Roms.srrip-flex-prefetch-1core.err
+log =/home/faculty/yanos/RES/REPL-new/SADDRIP/condor-out-err/Roms.srrip-flex-prefetch-1core.log
+Queue

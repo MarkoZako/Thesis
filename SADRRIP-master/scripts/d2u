@@ -1,0 +1,4 @@
+#!/bin/tcsh
+# $1 inut file - to remove DOS extra chars
+
+perl -pi -e 's/\r\n/\n/g' $1

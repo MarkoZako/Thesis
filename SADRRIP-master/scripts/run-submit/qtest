@@ -1,0 +1,5 @@
+#!/usr/bin/tcsh
+
+set BIN = /home/faculty/yanos/RES/REPL-new/SADRRIP/bin
+
+$BIN/drrip-flex-slope-prefetch-1core -warmup_instructions 100 -simulation_instructions 50000000 -r 0747070742030202 -psel_width 10 -psel_mask 3 -dsalgo 1 -window_size 16 -track_set -2 -traces /home/students/cs/benchmarks/champsim/Roms.trace.gz

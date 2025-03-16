@@ -1,0 +1,95 @@
+#!/usr/bin/tcsh
+
+# $1 sim
+# $2 bench start-id
+# $3 bench num
+
+set blist = `ls /home/students/cs/benchmarks/champsim/ | grep gz | sed "s/.trace.gz//g" |gawk -vb=$2 -vn=$3 '{if (NR>=b && NR<b+n) printf "%s ",$i}'`
+
+#set plist = '43430202'
+
+##set plist = '0747070742030202'
+#set plist = '4242020202030202'
+##set plist = '0747070702030202'
+##set plist = '0747070703030202'
+##set plist = '4242020203430202'
+##set plist = '4242020203030202'
+
+set plist = '0303020203030202'
+
+#03420202'
+#set plist = '03030303  43430303  03430303 43030303 07070707 47470707 07470707 47070707'
+
+#22070707 
+
+#22020202 07070202 43070202
+#4203020 02030202 03030202 03430202 43430202 02020202 42420202 03220202
+#42020202 43030202
+# 42030202 42020202 02020202 42420202 02030202 03030202 43030202 43430202 03430202'
+##set plist = '07070707 07470707 77070707 77470707 77070707'
+#set plist = '07070707 07470707 77070707'
+##set plist = '77470707 47070707 47470707 47070707 47470707'
+#set plist = '77470707 47070707 47470707'
+#set plist = '07070707 47070707 77070707'
+
+#set plist = '42470202 47430202 47470202 27270202'
+#set plist = '27230202 03020202 03030202 07070202'
+
+#set plist = '0747070742030202 2207070722020202 4707070742020202 4707070742030202'
+
+####
+#set plist = '4747070742030202'
+#set plist = '0747070742020202'
+#set plist = '0747070742030202'
+# 0747070742020202'
+#set plist = '4707070742020202'
+#set plist = '0700070742000202'
+
+#set plist = '0747030342030202'
+#set plist = '0743030342030202'
+#set plist = '0343030342030202'
+#set plist = '0343030342020202'
+#set plist = '4343030342420202'
+
+set dirty_plist = '0303020203030202'
+
+set pselist = '10'
+# 11 10 9 8 7 6 5 4 3 2 1'
+# 10
+
+set pselmask = '1'
+#3 7 15'
+# 1 3 7 15'
+#mkdir results-$1-$2
+
+set dsalgo = '0'
+
+set window = '0'
+#128'
+
+set srthr = '0'
+
+set brthr = '0'
+# 28 32 36'
+
+set boost = '0'
+
+set hitmask = '0'
+
+set demmask = '0000000040444044'
+# 132'
+#3 7 12 11 15'
+#15 4 20'
+#19 35 67 27 43 75'
+#7 11 15'
+#7
+
+foreach bench ($blist)
+
+echo run_1champ.sh $1 100 500 $bench $plist $pselist $pselmask $dsalgo $window $srthr $brthr $boost $hitmask $demmask $dirty_plist
+#### debug ./run_tr1champ.sh $1 100 500 $bench "$plist" "$pselist" "$pselmask" "$dsalgo" "$window" "$srthr" "$brthr" "$boost" "$hitmask" "$demmask" &
+./run_1champ.sh $1 100 500 $bench "$plist" "$pselist" "$pselmask" "$dsalgo" "$window" "$srthr" "$brthr" "$boost" "$hitmask" "$demmask" "$dirty_plist" &
+#run_t1champ.sh $1 100 500 $bench "$plist" "$pselist" "$pselmask" &
+
+
+end

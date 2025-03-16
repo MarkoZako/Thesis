@@ -1,0 +1,25 @@
+#!/usr/bin/tcsh
+
+# directory
+# begin bench
+# end bench
+# field
+# caches or memory
+
+set blist = `ls $1 | gawk -vb=$2 -vn=$3 '{if (NR>=b && NR<b+n) printf "%s ",$i}'`
+
+#echo $blist
+
+foreach bench ($blist)
+
+set name = `echo -n $bench | sed "s/\// /g" | gawk '{printf "%s ",$NF}'`
+
+if ( $5 == 0 ) then
+grep ACCESS $1/$bench | gawk -vf=$4 -vn=$name '{a[NR]=$6/5e5;b[NR]=$8/5e5}END{printf "%14s H ",n; for(i=1;i<=NR;i++) if (i%5!=1 && i>=f) printf "%6.2f ",a[i]; else  if(i>=f)printf "  "; print ""; printf "%14s M ",n;for(i=1;i<=NR;i++) if (i%5!=1&& i>=f) printf "%6.2f ",b[i]; else if(i>=f) printf "  "; print ""}'
+else if ($5 == 1) then
+grep -e RQ -e WQ $1/$bench | gawk '{if (NR==1){ a=$(NF-2); b=$NF};if (NR==2) {printf "%6.2f\n", (a+$(NF-4))/(a+$(NF-2)+b+$(NF-4));printf "%6.2f\n", ($(NF-2)+$(NF-4))/5e5}}'
+else
+grep Finished $1/$bench | gawk '{printf "%6.4f\n",$10}' 
+endif
+
+end

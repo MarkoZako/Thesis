@@ -1,0 +1,195 @@
+22/7/2020
+
+This directory contains code, scripts, and results related to the research about Cache Replacement Policy
+
+##########################################
+1. various
+a directory with mainly various trial and error matterial as well as validation
+keep them their in case are needed but very unlikely
+most of these are zipped 
+
+1.1 code 
+a directory with the DRRIP code from CRP Championship
+
+1.2 32K 
+a large validation output file that tracks per access how DRRIP works (may be for a large shadow?)
+
+1.3 out-SRRIP
+produce the distribution for misses for SRRIP(default version in simulator?) that shows what is state in set (e.g. 10 blocks at 0, 3 blocks at 1, 1 block at 2, and 1 at 3) - useful to understand how a benchmark behaves... interesting to do this for different types of accesses (may be also for hits?). 
+
+there may be a small issue with these data as they may include warmup in the stats
+
+1.4 four-bench-valid-MK
+there are files porduced by Marios to help validate and sanity check various stuff
+per accesses how drrip works (inlcuidng psel), accesses, hits,misses distributed unifromly across sets (as predicted), which are the leader sets
+
+1.5 switches-viz
+These are datat produced by Marios to help vizualize switchign behavior of DRRIP (which policy is used). It also prints distribution of replacement state. also includes scripts for processing:
+
+proc-switch: process out data to produce file with .sw with switch info
+
+proc-gnu: helps vizulaize switching
+
+
+1.6 valid-visual-scripts
+few scripts to post-process data for validation for DRRIP and also produce distributions (of replacement state) - should be useful in general for understanding behavior. produce command that can be copy-pasted in gnuplot. 
+
+proc-acc: is to validate data in four-bench-valid
+
+proc-viz: is to post-process the data in out-SRRIP - this useful for understanding per set RRPV behavior
+
+##########################################
+2. SADRRIP
+This includes the dir withthe state-analytic code and some scripts for running simulator
+
+Read the two README files how to compile and run - some of the instrucitons for how to run are obsolete, use the following
+
+run_1champ.sh:
+script to run one benchmark (possibly multiple times with different parameters). The script takes many parameters. To understand what they are check simulator options documentation below.
+For this to run the script need to run in the folder where the simulator is in a folder named bin. results saved in the directory defined bu $RESULTS 
+
+run-bench:
+this script calls run_1champ.sh for each benchmark and passes the input parameters
+
+run-rem:
+script to run on remote machines in b103ws (needs mannual editing to specify what to run adn where... each machine is assigned 4 jobs)
+script takes no parameters
+
+run_tr1champ.sh:
+same as run_1champ.sh but produces detail data per interval to be used for state analytics (this enabled by option -track_set -3)
+
+##########################################
+3. BASIC-RESULTS
+This is the directory with the results from various experiments using the SADRRIP code
+
+error: 
+dir contains redirected error output when submitting jobs this more to catch crashes etc - not really needed just keep it for sanity check
+
+various: 
+dir with various output files i am not sure if they are needed as inputs by some scripts just keep them just in case
+the srrip top2,3,4 are useful to have and analyze
+
+
+##########################################
+4. SCRIPTS
+This is the directory with the main scripts for processing results in RESULTS produced with SADDRRIP code
+
+####
+many scripts run a common script in my ~/bin/SAcommon to help determine folders with SCRIPTS and RESULTS:
+#!/usr/bin/tcsh
+
+#set RESULTS = /home/faculty/yanos/RES/REPL-new/RESULTS
+setenv RESULTS /home/faculty/yanos/RES/REPL-new/SADRRIP/results
+
+setenv SCRIPTS /home/faculty/yanos/RES/REPL-new/SCRIPTS
+#set SCRIPTS = /home/faculty/yanos/RES/REPL-new/SADRRIP
+
+echo $RESULTS
+echo $SCRIPTS
+####
+
+proc-results:
+produces a table with IPC per bench. (row equal number of benchmarks selected,column folders selected), if some are not running are elisted at the end as missing. 
+the benches are selected with two parameters: starting benhc number and number of bench to process
+the directory is selected using the folder name as a key 
+useful to track progress of simulation as well as producing a quick performance table
+EXAMPLE: proc-results 1 20 t3
+
+analytics: 
+(uses file ing as an input that contains a gawk script)
+this scripts process the output files that have state analysis data (it process data with a specfic structure that is produed by simulaor otion track-set -3))
+it produces the output in three formats according to an input parameter:
+1: a summary for each stat independent of the others (this produces a 30 rows each with two stats miss and hits x number of benches - pasted together)
+2: a summary of all combinations (128 rows ) and for each combination the values of the 16+16 RS vectors for hits and misses (x number of benches - pasted together)
+4: a summary of all combinations (128 rows ) and for each combination the two totals  the sum of 16 misses +the sum of 16 hits RS vectors  (x number of benches - pasted together)
+
+track-exp:
+this is useful to track progress of jobs. it takes binary simulator-name and extension used for output and displays last heartbeat for each bench
+EXAMPLE: track-exp srrip-flex-dem-prefetch-1core 03020202-0-0-0-0-0-0-0-0-15
+
+proc-stats:
+used to process output for memory hierarchy stats (misses, hits for different types of accesses) - this assumes unmodified original champsim output formatting. proc-stats is used by comp-stats
+
+comp-stats:
+used to produce a summary report to compare two policies
+IPC, 
+different types of accesses hits and misses,
+as well % of memory access that are RQ+WQ hits and LLC writebacks PKI (?)
+it uses proc-stats to do the parsing
+it takes 6 parameters the two results directores, bench num to start, number of bench to process,  what caches to compare,  (1 means L 1D,L1I,L2,LLC, 6 means L1I,L2,LLC, 11 means L2,LLC, 16 means LLC) and how many of the stats print their delta (for example for comapring LLC I will use 4 to compare READ, RFO, PREF,WR), it always also compares memory queue hit rate as well as LLC WBs 
+EXAMPLE: comp-stats results/results-srrip-flex-dem-prefetch-1core-03020202-0-0-0-0-0-0-0-0-15 results/results-srrip-flex-dem-prefetch-1core-03020202-0-0-0-0-0-0-0-0-15 1 20 16 4
+
+d2u:
+dos2unix remove some weird dos specail chars - some systems provide this already
+
+gnudeb:
+this is a script that is useful to see how to automatically produce gnuplot outputs per bench. the specific scripts was used for somehting obsolete but its structure can be very useful 
+
+
+proc-top2, proc-top3, proc-top3-2fixed, proc-top4-2fixed:
+these four scripts determine the average IPC when selecting oracly the best of two, three and four policies (this is useful to motivate whether per pc is needed or coarse selection is fine) and which polices give the extra benefits....the 2fixed options have a fixed number for two of the choices (based on what is best for 2benches) 
+(For Yanos: the outputs for this scripts as of 20/7/20 are found in RESULTS/various folder with file names srrip-top* )
+EXAMPLE: proc-top3
+
+run-submit:
+directory with various (obsolete but useful) scripts for running simulator interactive/condor etc.
+
+condor-t1:
+an example condor submission script - guide to help someone that likes to use condor. The example is used to run another script that runs all benches (run_1champ.sh)
+
+qtest:
+a quick interactive run script - for illustration how to do such runs
+
+and few other files
+##########################################
+Simulator options:
+for some of the options that is not so obvious what they control
+
+-warmup_instructions ${n_warm}000000 -simulation_instructions ${n_sim}000000 -r $option -psel_width $pso -psel_mask $mask -hit_mask $hit -dsalgo $dsalgo -window_size $window -sr_thr $srt -br_thr $brt -boost $boost -demote_mask $dem -traces ${TRACE_DIR}${trace}.trace.gz
+
+-r : defines policy to use using 16 digit integer for CLEAN blocks (two policies each 8 digits)
+the 8 digits define what happens on a hit-miss x for each type (WR,PREF,RFO,READ), e.g.: 42030202
+for what each digit means read the code in replacement
+
+-dirty_rrip_policies : defines policy to use using 16 digit integer for DIRTY blocks (two policies each 8 digits)
+the 8 digits define what happens on a hit-miss x for each type (WR,PREF,RFO,READ), e.g.: 42030202
+for what each digit means read the code in replacement
+
+-psel_width for DRRIP this means how many bits is the psel counter
+
+-psel_mask indicates for SD DRRIP which types of instructions update psel counter on a miss (possible values 0-15, 1-hot 1-RD, 2-RFO, 4-PREF, 8-WR)
+this mask for SA control which type of misses update the interval counter
+
+-hit_mask for SA control which type of hits update the hit counters
+
+-dsalgo choose dynamic selection algo 0 is basic DRRIP, 2 is State-Analytic, 1 DRRIP wth boost (to change updates based on slope, thresholds)
+option 1 (boost DRRIP) is obsolete itried different things and did not work
+
+-window_size only useful for Algos 1 and 2. For SA (algo 2) determienes interval size (every time miss counter gets to this value we make a selection). For Boost (algo 1) is the distance that is isued to determine the slope. (obsolete for algo 1)
+
+-sr_thr
+-br_thr
+-boost
+the above three are only used for boost (algo 1) and are obsolete (thresholds for when to boost ad mount of boost, how much to increase/decrease psel and at what threshold)
+
+-demote-mask this is used to control how to demote during victim selection
+   -MODIFICATION: Demotion policy demote based on the demotion policy we choose for each type of access for each individual block's dirtyness 
+   -16 digits encoding the demotion policy for a type of access and clean/dirty(D15:dem policy for WR for CRP1 CLEAN,...,D11:dem policy for WR for CRP1 DIRTY,...,D7:dem policy for WR for CPR2 CLEAN,..., D3: dem policy for WR for CRP2 DIRTY...)
+   -Each Di encodes what demotion policy the type of access will use(0-9),e.g. 0: Full demotion,1: DEM_P1,2:DEM_P2,...
+   -For example 4044000040440000 encodes that all types of accesses except PF uses DEM_P4 for CLEAN BLOCKS and FULL_DEM for DIRTY BLOCKS and is the same for the 2 policies.So if a DEMAND request comes and we have 10 dirty and 15 clean blocks in the set the demotion will be DEM_P4 for the 15 CLEAN BLOCKS and FULL_DEM for the 10 DIRTY BLOCKS
+track-set:
+used for different purposes: to print the per access info for all sets (huge output!), specific set (smaller output) , print nothing, or to control printing of some detailed stats
+Currently detailed stats are produced only by code that includes drrip-flex.llc_repl (this is for Yanos: as of today only outputs with t3 in the results directory have such output).
+The -3 prints detailed state analytics when running the code that compiled drrip-flex - it produces per interval stats (intervalis defined by the selection algorithm) for each of the following unique cases:
+The 6 parameters we track the number of hits and misses for each one of th following unique combinations (there are 2x4x2x2x4x16=2048):
+policy used (e.g., 2: SRRIP or BRRIP),
+access type (4: READ, RFO, PREF,WRITE)
+modified types (2: clean or dirty) for block with hit or evicted on a miss
+used types: (2: first-use, reuse) for block with hit or evicted on a miss
+RRPV: (4: 0,1,2,3) - for block with hit or evicted on a miss
+VECTOR: (16: 01,02,03,012,013,023,0123,1,12,13,123,2,23,3 - a summary of RRPV states of all blocks in a set, 012 means RRPVs of blocks in a set with hit/miss are 0, 1 or 2 but not 3)
+the analytics scripts can be used to help process this output
+
+
+
+

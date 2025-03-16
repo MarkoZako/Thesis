@@ -1,0 +1,248 @@
+#include "cache.h"
+
+int globalDepth;
+int leafCounter;
+int testLine;
+
+struct bNode
+{
+    int value;
+    int leafFlag;
+    int way;		// Way of associativity
+    int side; 		// Indicates whether is left or right leaf of up node
+    bNode *up;      // Shows the previous node to reverse back
+    bNode *left;	// left block is more recent (even way number)
+    bNode *right;	// right block is more recent (odd way number)		
+};
+
+struct leaf
+{
+    bNode *up;		// Shows the previous node to reverse back
+};
+	
+bNode *line_order_bTree; // Create a tree for each cache line
+leaf *reverse_bTree; // Keep a reverse array to tree leaf for each way
+
+
+	
+void printTree (bNode *root, int depth)
+{
+    depth = depth >> 1;
+    fprintf(stderr, "Depth: %d\n", depth);        
+    fprintf(stderr, "Node side: %d\n", root->side);
+    fprintf(stderr, "Node value: %d\n", root->value);
+    if (root->leafFlag)
+    {
+        fprintf(stderr, "Way: %d\n", root->way);
+    }
+    else
+    {	
+        fprintf(stderr, "Going left\n");
+        printTree (root->left, depth);
+
+        fprintf(stderr, "Going right\n");
+        printTree (root->right, depth);
+    }
+}
+
+void createTree (bNode *root, int depth, long line, int side, int n_ways)
+{
+    globalDepth++;
+    depth = depth >> 1;
+    root->value = 0;
+    root->side = side;
+    if ((testLine >= 0) && (line == testLine))
+    {
+        fprintf(stderr, "Creating nodes for depth: %d\n", depth);
+    }
+    if (depth == 0)
+    {
+        root->leafFlag = 1;
+        root->way = leafCounter;
+        reverse_bTree[leafCounter+(line*n_ways)].up = root;
+        if ((testLine >= 0) && (line == testLine))
+        {
+            fprintf(stderr, "Node side: %d, and way: %d, by pointer: %d\n", root->side, root->way,reverse_bTree[leafCounter+(line*n_ways)].up->way);
+            fprintf(stderr, "Creating leaf for way: %d, location: %ld\n", leafCounter, leafCounter+(line*n_ways));
+        }
+        leafCounter++;
+    }
+    else
+    {	
+        root->leafFlag = 0;
+        root->way = 0;
+        root->left = new bNode;
+        if ((testLine >= 0) && (line == testLine))
+        {
+            fprintf(stderr, "Node side: %d\n", root->side);
+            fprintf(stderr, "Creating left for depth: %d\n", depth);
+        }
+        createTree (root->left, depth, line, 0, n_ways);
+        root->left->up = root;
+
+        root->right = new bNode;
+        if ((testLine >= 0) && (line == testLine))
+        {
+            fprintf(stderr, "Node side: %d\n", root->side);
+            fprintf(stderr, "Creating right for depth: %d\n", depth);
+        }
+        createTree(root->right, depth, line, 1, n_ways);			
+        root->right->up = root;
+    }
+}
+
+void reset(int n_sets, int n_ways) 
+{
+    for (long line = 0; line < n_sets; line++) 
+    {
+        bNode *bRoot = line_order_bTree + line;
+        int depth = n_ways;
+        bRoot->up = NULL;
+        globalDepth = 0;
+        leafCounter = 0;
+        createTree (bRoot, depth, line, 0, n_ways);
+    }
+}
+
+// initialize replacement state
+void CACHE::llc_initialize_replacement()
+{
+	line_order_bTree = new bNode[LLC_SET];
+	reverse_bTree = new leaf[LLC_SET * (LLC_WAY + 1)];
+	globalDepth = 0;
+	leafCounter = 0;
+    testLine = -1; //negative to disable testing
+    
+    reset(LLC_SET, LLC_WAY);
+}
+
+
+int evict_select(long line)
+{
+    int lru_way = 0;
+    
+    bNode *bRoot = line_order_bTree + line;
+    
+    while (!bRoot->leafFlag)
+    {
+        // If 1 then most recent was the right so take the left to evict and vice versa
+        if (bRoot->value)
+        {
+            bRoot = bRoot->left;
+        }
+        else
+        {
+            bRoot = bRoot->right;				
+        }
+    }
+    
+    lru_way = bRoot->way;
+
+    if ((testLine >= 0) && (line == testLine))
+    {
+        fprintf(stderr, "Evicting way: %d\n", lru_way);
+    }
+
+    return lru_way;
+}
+
+// find replacement victim
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type, uint64_t current_core_cycle, uint64_t instr_unique_id)
+{
+    // baseline LRU
+    return evict_select(set); 
+}
+
+void touch(long line, int way, int is_write, int sharedCache, int n_ways) 
+{
+
+    //Marios: Code when write on a shared Cache skip updating replacement policy bits
+    if (is_write && sharedCache)
+    {
+        return;
+    }
+    
+    //if (is_write && sharedCache)
+    //{
+    //	fprintf(stderr, "we got a write on sharedCache %d\n", is_write);
+    //}
+    
+    if ((testLine >= 0) && (line == testLine))
+    {
+        fprintf(stderr, "Touching way: %d\n",way);
+    }
+
+    bNode *currentNode = reverse_bTree[way+(line*n_ways)].up;
+    bNode *previousNode = currentNode;
+    if ((testLine >= 0) && (line == testLine))
+    {
+        fprintf(stderr, "Current node way: %d, in location: %ld\n",currentNode->way, way+(line*n_ways));
+        bNode *testNode = reverse_bTree[way+(line*n_ways)].up;
+        fprintf(stderr, "Test node way: %d, in location: %ld\n",testNode->way, way+(line*n_ways));
+    }
+    
+    int previousSide = 0;
+    while (currentNode != NULL)
+    {
+        if (!currentNode->leafFlag)
+        {
+            if ((testLine >= 0) && (line == testLine))
+            {
+                fprintf(stderr, "Value was: %d\n", currentNode->value);
+            }
+            currentNode->value = previousSide;
+            if ((testLine >= 0) && (line == testLine))
+            {
+                fprintf(stderr, "Value changed: %d\n", currentNode->value);
+            }
+        }
+        previousSide = currentNode->side;
+        previousNode = currentNode;
+        currentNode = currentNode->up;        
+    }
+    
+    if ((testLine >= 0) && (line == testLine))
+    {
+        printTree(previousNode, n_ways);
+        fprintf(stderr, "\n");
+    }
+}
+    
+// called on every cache hit and cache fill
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit, uint64_t current_core_cycle, int fill_level, uint8_t valid)
+{
+    string TYPE_NAME;
+    if (type == LOAD)
+        TYPE_NAME = "LOAD";
+    else if (type == RFO)
+        TYPE_NAME = "RFO";
+    else if (type == PREFETCH)
+        TYPE_NAME = "PF";
+    else if (type == WRITEBACK)
+        TYPE_NAME = "WB";
+    else
+        assert(0);
+
+    if (hit)
+        TYPE_NAME += "_HIT";
+    else
+        TYPE_NAME += "_MISS";
+
+    if ((type == WRITEBACK) && ip)
+        assert(0);
+
+    // uncomment this line to see the LLC accesses
+    // cout << "CPU: " << cpu << "  LLC " << setw(9) << TYPE_NAME << " set: " << setw(5) << set << " way: " << setw(2) << way;
+    // cout << hex << " paddr: " << setw(12) << paddr << " ip: " << setw(8) << ip << " victim_addr: " << victim_addr << dec << endl;
+
+    // baseline LRU
+    if (hit && (type == WRITEBACK)) // writeback hit does not update LRU state
+        return;
+
+    return touch(set, way, 0, 0, LLC_WAY);
+}
+
+void CACHE::llc_replacement_final_stats()
+{
+
+}

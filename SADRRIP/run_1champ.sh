@@ -14,7 +14,7 @@ setenv RESULTS /home/mzako001/Thesis/SADRRIP/Results
 setenv SCRIPTS /home/mzako001/Thesis/SADRRIP
 
 
-setenv TRACE_DIR /home/mzako001/Thesis/benchmarks/
+setenv TRACE_DIR /mnt/beegfs/iconst01/spec2017/
 
 
 set binary=$1

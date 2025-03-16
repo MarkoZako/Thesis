@@ -1,7 +1,10 @@
 #!/bin/tcsh
 
-set home_path = "/home/npapak01/Thesis/SADRRIP"
-set binary_path = "/home/npapak01/Thesis/SADRRIP/bin"
+#SBATCH -A local
+#SBATCH -p COMPUTE
+
+set home_path = "/home/mzako001/Thesis/SADRRIP"
+set binary_path = "/home/mzako001/Thesis/SADRRIP/bin"
 
 set executable = "run_1champ.sh"
 set binary = "perceptron-next_line-ip_stride-drrip-flex-1core"

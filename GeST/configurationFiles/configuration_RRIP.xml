@@ -73,7 +73,7 @@ Enter the name of the class located in the src\Fitness folder that will be used 
 
     <!--Input/output dir-->
     <dirToSaveResults
-        value="/home/mzako001/Thesis/Results/"
+        value="/home/mzako001/Thesis/SADRRIP/Results/"
     /> 
     <!-- The code sequeneces will be save in ascii format in .txt files in the specified dir. The name format of each file goes like this populationNumber_individualsIdNumber_fitnessValue_measurement1_.... Also a dir which is named
     after the date/time of the start of the run is created. This dir will contain each population saved in .pkl file and the rand state (also in .pkl format) at each population. This dir can be used as seed dir in case you want to continue an unfinished run. 

@@ -72,6 +72,6 @@ for benchmark in Benchmarks:
 
 if ipc_values:
     avg_ipc = sum(ipc_values) / len(ipc_values)
-    print("{:.3f}".format(avg_ipc))
+    print("{:.5f}".format(avg_ipc))
 else:
     print("0")

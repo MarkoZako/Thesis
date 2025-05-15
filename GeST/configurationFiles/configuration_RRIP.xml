@@ -169,14 +169,6 @@ Enter the name of the class located in the src\Fitness folder that will be used 
    type="register"
    toggle="False">
     </operand>
-    
-<!--    <operand-->
-<!--   id="Evic"-->
-<!--   values="%0 %1"-->
-<!--   type="register"-->
-<!--   toggle="False">-->
-<!--    </operand>-->
-
 
     <operand
    id="Inse"
@@ -195,31 +187,6 @@ Enter the name of the class located in the src\Fitness folder that will be used 
   </instructions_operands>
 
   <instructions>
-
-    <!--In this section you will specify the instructions you want the framework to use in the optimization
-    process.. -->
-
-    <!-- Lets understand how to decalare an instruction by explaining the following example
-
-       <instruction
-      name="ADD"
-      num_of_operands="3"
-      type="shortLat"
-       operand1="integer_register"
-        operand2="integer_register"
-       operand3="integer_register"
-        format="ADD op1,op2,op3"
-      toggle="False">
-    </instruction>
-
-     The name attribute is basically the unique indentifier of this instruction, usually you will be fine by just putting the instruction name (like in the example ADD)...
-    The num of operands and type attributes are pretty auto-explainable
-    Note that each instruction must belong to an instruction type which was defined in the instruction_type section. As you can see in the example the instruction belongs to shortLatency instruction type
-
-    For operand1, operand2 and etc you must specify an operand id that exists in the instructions_operands section..
-    In the format attribute put the string that represents the syntax of the instruction. op1, op2 and op3 point out to the place where each instruction's operand should be.
-    don't bother with toggle attribute is broken
-    -->
 
 
     <!--  LOAD   -->
@@ -240,15 +207,6 @@ Enter the name of the class located in the src\Fitness folder that will be used 
         format="L_DemDirty op1"
         toggle="False">
       </instruction>
-
-<!--      <instruction-->
-<!--        name="Eviction"-->
-<!--        num_of_operands="1"-->
-<!--        type="LOAD"-->
-<!--        operand1="Evic"-->
-<!--        format="L_EvicClean op1"-->
-<!--        toggle="False">-->
-<!--      </instruction>-->
 
       <instruction
         name="Insertion"
@@ -298,15 +256,6 @@ Enter the name of the class located in the src\Fitness folder that will be used 
         toggle="False">
       </instruction>
 
-<!--      <instruction-->
-<!--        name="Eviction"-->
-<!--        num_of_operands="1"-->
-<!--        type="RFO"-->
-<!--        operand1="Evic"-->
-<!--        format="R_EvicClean op1"-->
-<!--        toggle="False">-->
-<!--      </instruction>-->
-
       <instruction
         name="Insertion"
         num_of_operands="1"
@@ -355,14 +304,6 @@ Enter the name of the class located in the src\Fitness folder that will be used 
         toggle="False">
       </instruction>
 
-<!--      <instruction-->
-<!--        name="Eviction"-->
-<!--        num_of_operands="1"-->
-<!--        type="PREFETCH"-->
-<!--        operand1="Evic"-->
-<!--        format="P_EvicClean op1"-->
-<!--        toggle="False">-->
-<!--      </instruction>-->
 
       <instruction
         name="Insertion"
@@ -413,14 +354,6 @@ Enter the name of the class located in the src\Fitness folder that will be used 
         toggle="False">
       </instruction>
 
-<!--      <instruction-->
-<!--        name="Eviction"-->
-<!--        num_of_operands="1"-->
-<!--        type="WRITEBACK"-->
-<!--        operand1="Evic"-->
-<!--        format="W_EvicClean op1"-->
-<!--        toggle="False">-->
-<!--      </instruction>-->
 
       <instruction
         name="Insertion"

@@ -105,9 +105,7 @@ Enter the name of the class located in the src\Fitness folder that will be used 
     
   </general_inputs>
 
-  <instruction_types> <!--Specify intruction types and how much will be the amount of each type in the loop.. The percentage will be considered only if the instruction_percentage_clue is set to "True"-->
-    
-    <!-- how much percentage of each kind of instructions type the loop will consist of.. -->
+  <instruction_types> 
     <instruction_type
       id="LOAD"
       perc="0.25"

@@ -1,0 +1,25 @@
+2024-02-07 19:50:03.416 [info] 
+
+
+
+
+2024-02-07 19:50:03.416 [info] Extension host agent started.
+2024-02-07 19:50:03.416 [info] Started initializing default profile extensions in extensions installation folder. file:///home/mzako001/.vscode-server/extensions
+2024-02-07 19:50:03.426 [info] Completed initializing default profile extensions in extensions installation folder. file:///home/mzako001/.vscode-server/extensions
+2024-02-07 19:50:03.429 [info] [127.0.0.1][b03b971b][ManagementConnection] New connection established.
+2024-02-07 19:50:03.430 [info] [127.0.0.1][ce5603cc][ExtensionHostConnection] New connection established.
+2024-02-07 19:50:04.137 [info] [127.0.0.1][ce5603cc][ExtensionHostConnection] <1662> Launched Extension Host Process.
+2024-02-07 19:50:11.236 [info] [127.0.0.1][b03b971b][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+2024-02-07 19:50:11.275 [info] [127.0.0.1][ce5603cc][ExtensionHostConnection] <1662> Extension Host Process exited with code: 0, signal: null.
+2024-02-07 19:50:11.275 [info] Cancelling previous shutdown timeout
+2024-02-07 19:50:11.276 [info] Last EH closed, waiting before shutting down
+2024-02-07 19:50:12.689 [info] Got delay-shutdown request while in shutdown timeout, delaying
+2024-02-07 19:50:12.690 [info] Cancelling previous shutdown timeout
+2024-02-07 19:50:12.736 [info] [127.0.0.1][2a3c86f6][ManagementConnection] New connection established.
+2024-02-07 19:50:12.798 [info] [127.0.0.1][0f3a6973][ExtensionHostConnection] New connection established.
+2024-02-07 19:50:12.821 [info] [127.0.0.1][0f3a6973][ExtensionHostConnection] <1894> Launched Extension Host Process.
+2024-02-07 19:51:28.190 [info] [127.0.0.1][2a3c86f6][ManagementConnection] The client has disconnected gracefully, so the connection will be disposed.
+2024-02-07 19:51:28.226 [info] [127.0.0.1][0f3a6973][ExtensionHostConnection] <1894> Extension Host Process exited with code: 0, signal: null.
+2024-02-07 19:51:28.226 [info] Cancelling previous shutdown timeout
+2024-02-07 19:51:28.226 [info] Last EH closed, waiting before shutting down
+2024-02-07 19:56:28.227 [info] Last EH closed, shutting down

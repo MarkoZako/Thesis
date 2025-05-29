@@ -1,0 +1,138 @@
+=== L_DemotionClean ===
+   val=4  pop= 8 wls=['Blender', 'CactuBSSN', 'Cam4', 'Gcc', 'Lbm', 'Parest', 'Xalancbmk', 'Xz'] mask=11101100100101
+   val=1  pop= 5 wls=['CactuBSSN', 'Cam4', 'Fotonik3d', 'Gcc', 'Lbm'] mask=01111100000000
+   val=0  pop= 5 wls=['Mcf', 'Omnetpp', 'Roms', 'Wrf', 'x264'] mask=00000011011010
+   val=2  pop= 2 wls=['Lbm', 'Xalancbmk'] mask=00000100000100
+   val=3  pop= 2 wls=['Lbm', 'Xalancbmk'] mask=00000100000100
+--> min policies to cover all 14: 3 (values: 4, 0, 1)
+
+=== L_DemotionDirty ===
+   val=4  pop= 6 wls=['CactuBSSN', 'Cam4', 'Fotonik3d', 'Omnetpp', 'Xalancbmk', 'x264'] mask=01110001000110
+   val=0  pop= 5 wls=['Blender', 'Lbm', 'Parest', 'Roms', 'Xz'] mask=10000100110001
+   val=1  pop= 4 wls=['Fotonik3d', 'Gcc', 'Xalancbmk', 'x264'] mask=00011000000110
+   val=2  pop= 3 wls=['Mcf', 'Wrf', 'Xalancbmk'] mask=00000010001100
+   val=3  pop= 2 wls=['Wrf', 'Xalancbmk'] mask=00000000001100
+--> min policies to cover all 14: 4 (values: 4, 0, 2, 1)
+
+=== L_Insertion ===
+   val=2  pop= 7 wls=['Blender', 'Cam4', 'Omnetpp', 'Parest', 'Roms', 'Xalancbmk', 'Xz'] mask=10100001110101
+   val=1  pop= 4 wls=['CactuBSSN', 'Gcc', 'Mcf', 'x264'] mask=01001010000010
+   val=3  pop= 2 wls=['Lbm', 'Wrf'] mask=00000100001000
+   val=0  pop= 1 wls=['Fotonik3d'] mask=00010000000000
+--> min policies to cover all 14: 4 (values: 2, 1, 3, 0)
+
+=== L_PromotionClean ===
+   val=0  pop= 9 wls=['Blender', 'CactuBSSN', 'Cam4', 'Fotonik3d', 'Gcc', 'Mcf', 'Omnetpp', 'Xz', 'x264'] mask=11111011000011
+   val=2  pop= 3 wls=['Lbm', 'Wrf', 'Xalancbmk'] mask=00000100001100
+   val=1  pop= 2 wls=['Parest', 'Roms'] mask=00000000110000
+--> min policies to cover all 14: 3 (values: 0, 2, 1)
+
+=== L_PromotionDirty ===
+   val=0  pop= 8 wls=['Gcc', 'Lbm', 'Mcf', 'Omnetpp', 'Parest', 'Roms', 'Xz', 'x264'] mask=00001111110011
+   val=1  pop= 7 wls=['CactuBSSN', 'Cam4', 'Fotonik3d', 'Lbm', 'Wrf', 'Xalancbmk', 'x264'] mask=01110100001110
+   val=2  pop= 2 wls=['Blender', 'Lbm'] mask=10000100000000
+--> min policies to cover all 14: 3 (values: 0, 1, 2)
+
+=== R_DemotionClean ===
+   val=0  pop= 8 wls=['Blender', 'Lbm', 'Mcf', 'Omnetpp', 'Parest', 'Roms', 'Wrf', 'Xz'] mask=10000111111001
+   val=4  pop= 5 wls=['CactuBSSN', 'Cam4', 'Fotonik3d', 'Gcc', 'x264'] mask=01111000000010
+   val=2  pop= 1 wls=['Xalancbmk'] mask=00000000000100
+   val=3  pop= 1 wls=['Xalancbmk'] mask=00000000000100
+   val=1  pop= 1 wls=['x264'] mask=00000000000010
+--> min policies to cover all 14: 3 (values: 0, 4, 2)
+
+=== R_DemotionDirty ===
+   val=0  pop= 7 wls=['Cam4', 'Fotonik3d', 'Lbm', 'Omnetpp', 'Parest', 'Roms', 'x264'] mask=00110101110010
+   val=1  pop= 6 wls=['Blender', 'CactuBSSN', 'Gcc', 'Mcf', 'Xalancbmk', 'x264'] mask=11001010000110
+   val=4  pop= 5 wls=['Blender', 'CactuBSSN', 'Gcc', 'Xalancbmk', 'x264'] mask=11001000000110
+   val=3  pop= 4 wls=['Mcf', 'Wrf', 'Xalancbmk', 'Xz'] mask=00000010001101
+   val=2  pop= 2 wls=['Xalancbmk', 'Xz'] mask=00000000000101
+--> min policies to cover all 14: 3 (values: 0, 1, 3)
+
+=== R_Insertion ===
+   val=3  pop=10 wls=['Blender', 'CactuBSSN', 'Gcc', 'Mcf', 'Omnetpp', 'Roms', 'Wrf', 'Xalancbmk', 'Xz', 'x264'] mask=11001011011111
+   val=0  pop= 2 wls=['Cam4', 'Parest'] mask=00100000100000
+   val=2  pop= 2 wls=['Fotonik3d', 'Lbm'] mask=00010100000000
+   val=1  pop= 1 wls=['Parest'] mask=00000000100000
+--> min policies to cover all 14: 3 (values: 3, 0, 2)
+
+=== R_PromotionClean ===
+   val=0  pop= 9 wls=['Blender', 'CactuBSSN', 'Fotonik3d', 'Lbm', 'Mcf', 'Parest', 'Wrf', 'Xalancbmk', 'Xz'] mask=11010110101101
+   val=2  pop= 8 wls=['Blender', 'CactuBSSN', 'Cam4', 'Lbm', 'Omnetpp', 'Roms', 'Xz', 'x264'] mask=11100101010011
+   val=1  pop= 7 wls=['Blender', 'CactuBSSN', 'Gcc', 'Lbm', 'Parest', 'Xalancbmk', 'Xz'] mask=11001100100101
+--> min policies to cover all 14: 3 (values: 0, 2, 1)
+
+=== R_PromotionDirty ===
+   val=0  pop= 8 wls=['Blender', 'Cam4', 'Lbm', 'Mcf', 'Parest', 'Wrf', 'Xz', 'x264'] mask=10100110101011
+   val=1  pop= 7 wls=['Gcc', 'Omnetpp', 'Parest', 'Roms', 'Xalancbmk', 'Xz', 'x264'] mask=00001001110111
+   val=2  pop= 2 wls=['CactuBSSN', 'Fotonik3d'] mask=01010000000000
+--> min policies to cover all 14: 3 (values: 0, 1, 2)
+
+=== W_DemotionClean ===
+   val=0  pop= 8 wls=['Blender', 'Gcc', 'Lbm', 'Omnetpp', 'Parest', 'Roms', 'Wrf', 'Xz'] mask=10001101111001
+   val=2  pop= 4 wls=['CactuBSSN', 'Cam4', 'Fotonik3d', 'Xalancbmk'] mask=01110000000100
+   val=3  pop= 4 wls=['CactuBSSN', 'Cam4', 'Fotonik3d', 'Xalancbmk'] mask=01110000000100
+   val=4  pop= 2 wls=['Mcf', 'x264'] mask=00000010000010
+   val=1  pop= 1 wls=['x264'] mask=00000000000010
+--> min policies to cover all 14: 3 (values: 0, 2, 4)
+
+=== W_DemotionDirty ===
+   val=1  pop= 5 wls=['Blender', 'Lbm', 'Mcf', 'Roms', 'x264'] mask=10000110010010
+   val=0  pop= 5 wls=['CactuBSSN', 'Gcc', 'Omnetpp', 'Xalancbmk', 'Xz'] mask=01001001000101
+   val=2  pop= 4 wls=['Blender', 'Cam4', 'Fotonik3d', 'Wrf'] mask=10110000001000
+   val=3  pop= 4 wls=['Blender', 'Cam4', 'Fotonik3d', 'Mcf'] mask=10110010000000
+   val=4  pop= 3 wls=['Parest', 'Roms', 'x264'] mask=00000000110010
+--> min policies to cover all 14: 4 (values: 1, 0, 2, 4)
+
+=== W_Insertion ===
+   val=2  pop= 5 wls=['CactuBSSN', 'Mcf', 'Omnetpp', 'Xalancbmk', 'Xz'] mask=01000011000101
+   val=0  pop= 4 wls=['Cam4', 'Parest', 'Wrf', 'x264'] mask=00100000101010
+   val=3  pop= 4 wls=['Fotonik3d', 'Lbm', 'Mcf', 'Roms'] mask=00010110010000
+   val=1  pop= 2 wls=['Blender', 'Gcc'] mask=10001000000000
+--> min policies to cover all 14: 4 (values: 2, 0, 3, 1)
+
+=== W_PromotionClean ===
+   val=2  pop= 8 wls=['Blender', 'CactuBSSN', 'Fotonik3d', 'Mcf', 'Roms', 'Xalancbmk', 'Xz', 'x264'] mask=11010010010111
+   val=1  pop= 4 wls=['Cam4', 'Gcc', 'Omnetpp', 'Parest'] mask=00101001100000
+   val=0  pop= 2 wls=['Lbm', 'Wrf'] mask=00000100001000
+--> min policies to cover all 14: 3 (values: 2, 1, 0)
+
+=== W_PromotionDirty ===
+   val=0  pop= 6 wls=['Cam4', 'Mcf', 'Roms', 'Wrf', 'Xz', 'x264'] mask=00100010011011
+   val=2  pop= 4 wls=['Blender', 'CactuBSSN', 'Lbm', 'Omnetpp'] mask=11000101000000
+   val=1  pop= 4 wls=['Fotonik3d', 'Gcc', 'Parest', 'Xalancbmk'] mask=00011000100100
+--> min policies to cover all 14: 3 (values: 0, 2, 1)
+
+=== P_DemotionClean ===
+   val=1  pop= 6 wls=['Blender', 'CactuBSSN', 'Cam4', 'Fotonik3d', 'Lbm', 'Xz'] mask=11110100000001
+   val=4  pop= 5 wls=['Blender', 'CactuBSSN', 'Fotonik3d', 'Mcf', 'Parest'] mask=11010010100000
+   val=0  pop= 5 wls=['Gcc', 'Omnetpp', 'Roms', 'Wrf', 'x264'] mask=00001001011010
+   val=2  pop= 3 wls=['CactuBSSN', 'Gcc', 'Xalancbmk'] mask=01001000000100
+   val=3  pop= 3 wls=['CactuBSSN', 'Gcc', 'Xalancbmk'] mask=01001000000100
+--> min policies to cover all 14: 4 (values: 1, 0, 4, 2)
+
+=== P_DemotionDirty ===
+   val=1  pop= 7 wls=['Cam4', 'Fotonik3d', 'Omnetpp', 'Parest', 'Roms', 'Xalancbmk', 'x264'] mask=00110001110110
+   val=4  pop= 6 wls=['Fotonik3d', 'Lbm', 'Parest', 'Roms', 'Xalancbmk', 'x264'] mask=00010100110110
+   val=2  pop= 4 wls=['CactuBSSN', 'Fotonik3d', 'Mcf', 'Wrf'] mask=01010010001000
+   val=0  pop= 3 wls=['Blender', 'Gcc', 'Xz'] mask=10001000000001
+   val=3  pop= 3 wls=['CactuBSSN', 'Fotonik3d', 'Mcf'] mask=01010010000000
+--> min policies to cover all 14: 4 (values: 1, 0, 2, 4)
+
+=== P_Insertion ===
+   val=3  pop=10 wls=['Blender', 'Cam4', 'Fotonik3d', 'Gcc', 'Lbm', 'Omnetpp', 'Parest', 'Wrf', 'Xalancbmk', 'Xz'] mask=10111101101101
+   val=1  pop= 2 wls=['CactuBSSN', 'x264'] mask=01000000000010
+   val=2  pop= 2 wls=['Mcf', 'Roms'] mask=00000010010000
+--> min policies to cover all 14: 3 (values: 3, 1, 2)
+
+=== P_PromotionClean ===
+   val=2  pop= 7 wls=['Blender', 'Lbm', 'Parest', 'Roms', 'Wrf', 'Xalancbmk', 'Xz'] mask=10000100111101
+   val=0  pop= 4 wls=['CactuBSSN', 'Cam4', 'Fotonik3d', 'x264'] mask=01110000000010
+   val=1  pop= 3 wls=['Gcc', 'Mcf', 'Omnetpp'] mask=00001011000000
+--> min policies to cover all 14: 3 (values: 2, 0, 1)
+
+=== P_PromotionDirty ===
+   val=0  pop= 6 wls=['CactuBSSN', 'Gcc', 'Lbm', 'Omnetpp', 'Parest', 'Roms'] mask=01001101110000
+   val=1  pop= 5 wls=['Cam4', 'Fotonik3d', 'Mcf', 'Wrf', 'Xz'] mask=00110010001001
+   val=2  pop= 3 wls=['Blender', 'Xalancbmk', 'x264'] mask=10000000000110
+--> min policies to cover all 14: 3 (values: 0, 1, 2)

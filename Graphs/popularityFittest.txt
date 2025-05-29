@@ -1,0 +1,59 @@
+=== L_DemotionClean ===
+--> min policies to cover all 14: 0
+
+=== L_DemotionDirty ===
+--> min policies to cover all 14: 0
+
+=== L_Insertion ===
+--> min policies to cover all 14: 0
+
+=== L_PromotionClean ===
+--> min policies to cover all 14: 0
+
+=== L_PromotionDirty ===
+--> min policies to cover all 14: 0
+
+=== R_DemotionClean ===
+--> min policies to cover all 14: 0
+
+=== R_DemotionDirty ===
+--> min policies to cover all 14: 0
+
+=== R_Insertion ===
+--> min policies to cover all 14: 0
+
+=== R_PromotionClean ===
+--> min policies to cover all 14: 0
+
+=== R_PromotionDirty ===
+--> min policies to cover all 14: 0
+
+=== W_DemotionClean ===
+--> min policies to cover all 14: 0
+
+=== W_DemotionDirty ===
+--> min policies to cover all 14: 0
+
+=== W_Insertion ===
+--> min policies to cover all 14: 0
+
+=== W_PromotionClean ===
+--> min policies to cover all 14: 0
+
+=== W_PromotionDirty ===
+--> min policies to cover all 14: 0
+
+=== P_DemotionClean ===
+--> min policies to cover all 14: 0
+
+=== P_DemotionDirty ===
+--> min policies to cover all 14: 0
+
+=== P_Insertion ===
+--> min policies to cover all 14: 0
+
+=== P_PromotionClean ===
+--> min policies to cover all 14: 0
+
+=== P_PromotionDirty ===
+--> min policies to cover all 14: 0

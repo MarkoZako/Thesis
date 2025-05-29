@@ -1,0 +1,23 @@
+Highest Fittest Speedup per Benchmark
+=====================================
+
+Blender: 1.016779  achieved by policy 5_240_1DOT011340_1DOT011340_191_151.txt
+Bwaves: 1.000089  achieved by policy 13_615_1DOT011980_1DOT011980_598_565.txt
+Cam4: 1.008937  achieved by policy 34_1673_1DOT010120_1DOT010120_1630_1621.txt
+cactuBSSN: 1.002043  achieved by policy 1_39_0DOT988160_0DOT988160_0_0.txt
+Exchange: 1.000275  achieved by policy 10_445_1DOT013720_1DOT013720_0_0.txt
+Gcc: 1.006190  achieved by policy 25_1220_1DOT014240_1DOT014240_1147_1194.txt
+Lbm: 1.071195  achieved by policy 20_964_0DOT993840_0DOT993840_888_932.txt
+Mcf: 1.016933  achieved by policy 4_160_1DOT004440_1DOT004440_126_133.txt
+Parest: 1.106610  achieved by policy 41_2021_1DOT012160_1DOT012160_1967_1968.txt
+Povray: 0.999874  achieved by policy 10_465_1DOT005710_1DOT005710_412_448.txt
+Wrf: 1.027047  achieved by policy 13_604_0DOT993850_0DOT993850_591_559.txt
+Xalancbmk: 1.113106  achieved by policy 1_32_1DOT001020_1DOT001020_0_0.txt
+Fotonik3d: 1.002998  achieved by policy 1_16_0DOT000000_0DOT000000_0_0.txt
+Imagick: 1.000219  achieved by policy 10_465_1DOT005710_1DOT005710_412_448.txt
+Leela: 1.000816  achieved by policy 35_1743_1DOT006680_1DOT006680_1527_1699.txt
+Omnetpp: 1.013610  achieved by policy 34_1670_1DOT014040_1DOT014040_1646_1640.txt
+Perlbench: 1.000527  achieved by policy 10_465_1DOT005710_1DOT005710_412_448.txt
+Roms: 1.016515  achieved by policy 10_465_1DOT005710_1DOT005710_412_448.txt
+x264: 1.000131  achieved by policy 26_1286_1DOT001740_1DOT001740_1245_1243.txt
+Xz: 1.009435  achieved by policy 31_1528_1DOT014450_1DOT014450_1486_1438.txt
